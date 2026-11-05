@@ -13,6 +13,7 @@ function sayBtn(id) {
   b.addEventListener("click", ev => {
     ev.stopPropagation();
     $("#teacher").pause();
+    $("#halloweenSong").pause();
     const wasPlaying = curBtn === b;
     stopAudio();
     if (wasPlaying) return;
@@ -28,10 +29,11 @@ function sayBtn(id) {
 }
 
 /* Views */
-const VIEWS = ["plan", "rhyme", "story", "words", "practice"];
+const VIEWS = ["song", "plan", "rhyme", "story", "words", "practice"];
 function show(v) {
   stopAudio();
   if (window.teacher) $("#teacher").pause();
+  $("#halloweenSong").pause();
   if (!VIEWS.includes(v)) v = "plan";
   VIEWS.forEach(n => $("#" + n).classList.toggle("on", n === v));
   document.querySelectorAll("#tabs button").forEach(b => { if (b.dataset.v === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current"); });
@@ -381,7 +383,7 @@ renderOrder();
 show(location.hash.slice(1));
 
 const teacher = $("#teacher"); window.teacher = teacher;
-teacher.addEventListener("play", () => stopAudio());
+teacher.addEventListener("play", () => {stopAudio();$("#halloweenSong").pause();});
 $("#continue").addEventListener("click",()=>go("rhyme"));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>go(b.dataset.go)));
 document.querySelectorAll("[data-page]").forEach(b=>b.addEventListener("click",()=>{ storyPage=+b.dataset.page; stopAudio(); document.querySelectorAll("[data-page]").forEach(t=>{t.classList.toggle("on",t===b);t.setAttribute("aria-pressed",String(t===b));}); renderStory(); }));
@@ -389,3 +391,10 @@ $("#wordSearch").addEventListener("input",e=>{wordSearch=e.target.value.trim().t
 document.querySelectorAll("[data-time]").forEach(b=>b.addEventListener("click",()=>{stopAudio();teacher.currentTime=+b.dataset.time;teacher.play().catch(()=>{});}));
 $("#resetQuiz").addEventListener("click",()=>{sessionStorage.setItem("ferry-return","practice"); location.reload();});
 if(sessionStorage.getItem("ferry-return")){sessionStorage.removeItem("ferry-return");go("practice");}
+
+// Keep the song, teacher recording, and individual clips from overlapping.
+const song = $("#halloweenSong");
+song.addEventListener("play", () => { stopAudio(); teacher.pause(); $("#songError").hidden = true; });
+song.addEventListener("error", () => { $("#songError").hidden = false; });
+$("#songSpeed").addEventListener("change", e => { song.playbackRate = Number(e.target.value); });
+$("#songLoop").addEventListener("change", e => { song.loop = e.target.checked; });
